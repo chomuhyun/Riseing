@@ -6,10 +6,12 @@ using Cinemachine;
 
 public class PlayerCtrl : MonoBehaviour
 {
+    float gravity = 9.8f;
+
     [Header("Com")]
     CharacterController characterController;
     Animator animator;
-    CinemachineVirtualCamera cvc;
+    public CinemachineVirtualCamera cvc;
 
     void Start()
     {
@@ -22,6 +24,7 @@ public class PlayerCtrl : MonoBehaviour
     void Update()
     {
         Move();
+        Attack();
     }
 
     void Move()
@@ -29,9 +32,6 @@ public class PlayerCtrl : MonoBehaviour
         Vector2 moveinput = new Vector2(Input.GetAxis("Horizontal") * Time.deltaTime * 1.5f, Input.GetAxis("Vertical") * Time.deltaTime * 1.5f);
         bool ismove = moveinput.magnitude != 0;
         animator.SetBool("isRun", ismove);
-
-
-
         if (ismove)
         {
             Vector3 lookForward = new Vector3(cvc.transform.forward.x, 0f, cvc.transform.forward.z).normalized;
@@ -40,7 +40,26 @@ public class PlayerCtrl : MonoBehaviour
 
             transform.forward = moveDir;
             transform.position += moveDir * Time.deltaTime * 0.01f;
-            characterController.Move(moveDir * 5f);
+            characterController.Move(moveDir * 0.5f);
+
+            if (!characterController.isGrounded)
+            {
+                Vector3 gravityVector = Vector3.down * gravity * Time.deltaTime;
+            characterController.Move(gravityVector);
+            }
+
+            if(Input.GetKey(KeyCode.W) && Input.GetKeyDown(KeyCode.Space))
+            {
+                animator.SetTrigger("DF");
+            }
+        }
+    }
+
+    void Attack()
+    {
+        if(Input.GetKeyDown(KeyCode.Mouse0))
+        {
+            animator.SetTrigger("ATTACK");
         }
     }
 }
