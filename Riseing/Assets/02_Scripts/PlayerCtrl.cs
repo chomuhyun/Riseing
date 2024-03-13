@@ -7,6 +7,11 @@ using Cinemachine;
 public class PlayerCtrl : MonoBehaviour
 {
     float gravity = 9.8f;
+    public float atkCoolDownTime = 2f;
+    float nextAtkTime = 0f;
+    public static int noAtks = 0;
+    float lastClickTime = 0f;
+    float maxComboDelay = 1f;
 
     [Header("Com")]
     CharacterController characterController;
@@ -24,7 +29,31 @@ public class PlayerCtrl : MonoBehaviour
     void Update()
     {
         Move();
-        Attack();
+        if(animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.7f && animator.GetCurrentAnimatorStateInfo(0).IsName("hit1"))
+        {
+            animator.SetBool("hit1", false);
+        }
+        if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.7f && animator.GetCurrentAnimatorStateInfo(0).IsName("hit2"))
+        {
+            animator.SetBool("hit2", false);
+        }
+        if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.7f && animator.GetCurrentAnimatorStateInfo(0).IsName("hit3"))
+        {
+            animator.SetBool("hit3", false);
+        }
+        if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.7f && animator.GetCurrentAnimatorStateInfo(0).IsName("hit4"))
+        {
+            animator.SetBool("hit4", false);
+            noAtks = 0;
+        }
+        if(Time.time - lastClickTime > maxComboDelay)
+        {
+            noAtks = 0;
+        }
+            if (Input.GetMouseButtonDown(0))
+            {
+                Attack();
+            }
     }
 
     void Move()
@@ -47,19 +76,47 @@ public class PlayerCtrl : MonoBehaviour
                 Vector3 gravityVector = Vector3.down * gravity * Time.deltaTime;
             characterController.Move(gravityVector);
             }
-
-            if(Input.GetKey(KeyCode.W) && Input.GetKeyDown(KeyCode.Space))
+            if (Input.GetKeyDown(KeyCode.LeftShift))
             {
+                transform.position += moveDir * Time.deltaTime * 1f;
+                characterController.Move(moveDir * 70f);
                 animator.SetTrigger("DF");
             }
+            else
+            {
+                characterController.Move(moveDir * 0.5f);
+            } 
+        }
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            animator.SetTrigger("JUMP");
         }
     }
 
     void Attack()
     {
-        if(Input.GetKeyDown(KeyCode.Mouse0))
+        lastClickTime = Time.time;
+        noAtks++;
+        if(noAtks == 1)
         {
-            animator.SetTrigger("ATTACK");
+            animator.SetBool("hit1", true);
+        }
+        noAtks = Mathf.Clamp(noAtks, 0, 4);
+
+        if(noAtks >=2 && animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.7f && animator.GetCurrentAnimatorStateInfo(0).IsName("hit1"))
+        {
+            animator.SetBool("hit1", false);
+            animator.SetBool("hit2", true);
+        }
+        if (noAtks >= 3 && animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.7f && animator.GetCurrentAnimatorStateInfo(0).IsName("hit2"))
+        {
+            animator.SetBool("hit2", false);
+            animator.SetBool("hit3", true);
+        }
+        if (noAtks >= 4 && animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.7f && animator.GetCurrentAnimatorStateInfo(0).IsName("hit3"))
+        {
+            animator.SetBool("hit3", false);
+            animator.SetBool("hit4", true);
         }
     }
 }
