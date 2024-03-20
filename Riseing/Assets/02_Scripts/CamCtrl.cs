@@ -7,7 +7,9 @@ public class CamCtrl : MonoBehaviour
 {
 	private Vector3 lastMousePosition;
 	public bool isFixed; // 알트 누르면 고정
-
+	private Vector3 dragOrigin;
+	private Vector3 lastTouchPosition;
+	private bool isDragging = false;
 
 	public Transform player;                                           // Player's reference.
 	public Vector3 pivotOffset = new Vector3(0.0f, 1.7f, 0.0f);       // Offset to repoint the camera.
@@ -77,21 +79,43 @@ public class CamCtrl : MonoBehaviour
 			lastMousePosition = Input.mousePosition;
 			return;
 		}
-		angleH += Mathf.Clamp(Input.GetAxis("Mouse X"), -1, 1) * horizontalAimingSpeed;
-		angleV += Mathf.Clamp(Input.GetAxis("Mouse Y"), -1, 1) * verticalAimingSpeed;
-	
-		angleH += Mathf.Clamp(Input.GetAxis(XAxis), -1, 10) * 60 * horizontalAimingSpeed * Time.deltaTime;
-		angleV += Mathf.Clamp(Input.GetAxis(YAxis), -1, 10) * 60 * verticalAimingSpeed * Time.deltaTime;
+		if (Input.touchCount > 0)
+		{
+			Touch touch = Input.GetTouch(0);
 
-		angleV = Mathf.Clamp(angleV, minVerticalAngle, targetMaxVerticalAngle);
+			switch (touch.phase)
+			{
+				case TouchPhase.Began:
+					lastTouchPosition = touch.position;
+					isDragging = true;
+					break;
 
-		Quaternion camYRotation = Quaternion.Euler(15, angleH, 0);
-		Quaternion aimRotation = Quaternion.Euler(-angleV, angleH, 0);
-		cam.rotation = aimRotation;
+				case TouchPhase.Moved:
+					if (isDragging)
+					{
+						Vector2 delta = touch.position - (Vector2)lastTouchPosition;
+						lastTouchPosition = touch.position;
 
+						angleH += delta.x * horizontalAimingSpeed * Time.deltaTime;
+						angleV -= delta.y * verticalAimingSpeed * Time.deltaTime;
+						angleV = Mathf.Clamp(angleV, minVerticalAngle, targetMaxVerticalAngle);
+
+						Quaternion camYRotation = Quaternion.Euler(15, angleH, 0);
+						Quaternion aimRotation = Quaternion.Euler(-angleV, angleH, 0);
+						cam.rotation = aimRotation;
+					}
+					break;
+
+				case TouchPhase.Ended:
+				case TouchPhase.Canceled:
+					isDragging = false;
+					break;
+			}
+		}
 		if (player != null)
 		{
-
+			Quaternion camYRotation = Quaternion.Euler(15, angleH, 0);
+			Quaternion aimRotation = Quaternion.Euler(-angleV, angleH, 0);
 			Vector3 baseTempPosition = player.position + camYRotation * targetPivotOffset;
 			Vector3 noCollisionOffset = targetCamOffset;
 			while (noCollisionOffset.magnitude >= 0.2f)

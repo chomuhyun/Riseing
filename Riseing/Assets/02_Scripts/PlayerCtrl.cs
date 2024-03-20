@@ -12,8 +12,12 @@ public class PlayerCtrl : MonoBehaviour
     public static int noAtks = 0;
     float lastClickTime = 0f;
     float maxComboDelay = 1f;
+    private Transform targetEnemy;
+    public GameObject weapons;
+    public bool battle;
 
     [Header("Com")]
+    public VariableJoystick joy;
     CharacterController characterController;
     Animator animator;
     public CinemachineVirtualCamera cvc;
@@ -50,15 +54,29 @@ public class PlayerCtrl : MonoBehaviour
         {
             noAtks = 0;
         }
-            if (Input.GetMouseButtonDown(0))
+        if(battle)
+        {
+            DetectNearestEnemy();
+            if (targetEnemy != null)
             {
-                Attack();
+                Vector3 directionToEnemy = targetEnemy.position - transform.position;
+                directionToEnemy.y = 0f;
+                Quaternion targetRotation = Quaternion.LookRotation(directionToEnemy);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, 360f * Time.deltaTime);
             }
+            StartCoroutine(BattleOut());
+        }
     }
+    IEnumerator BattleOut()
+    {
+        yield return new WaitForSeconds(3f);
+        battle = false;
+    }
+    
 
     void Move()
     {
-        Vector2 moveinput = new Vector2(Input.GetAxis("Horizontal") * Time.deltaTime * 1.5f, Input.GetAxis("Vertical") * Time.deltaTime * 1.5f);
+        Vector2 moveinput = new Vector2(joy.Horizontal * Time.deltaTime * 1.5f, joy.Vertical * Time.deltaTime * 1.5f);
         bool ismove = moveinput.magnitude != 0;
         animator.SetBool("isRun", ismove);
         if (ismove)
@@ -93,7 +111,7 @@ public class PlayerCtrl : MonoBehaviour
         }
     }
 
-    void Attack()
+    public void Attack()
     {
         lastClickTime = Time.time;
         noAtks++;
@@ -117,6 +135,26 @@ public class PlayerCtrl : MonoBehaviour
         {
             animator.SetBool("hit3", false);
             animator.SetBool("hit4", true);
+        }
+    }
+    private void DetectNearestEnemy()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        float nearestDistanceSqr = Mathf.Infinity;
+        GameObject nearestEnemy = null;
+        foreach (GameObject enemy in enemies)
+        {
+            Vector3 directionToEnemy = enemy.transform.position - transform.position;
+            float distanceSqr = directionToEnemy.sqrMagnitude;
+            if (distanceSqr < nearestDistanceSqr)
+            {
+                nearestDistanceSqr = distanceSqr;
+                nearestEnemy = enemy;
+            }
+        }
+        if (nearestEnemy != null)
+        {
+            targetEnemy = nearestEnemy.transform;
         }
     }
 }
